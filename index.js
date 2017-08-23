@@ -70,7 +70,7 @@ window.onload = function () {
     tough: {
       speed: 5,
       node: 1,
-      health: 80,
+      health: 100,
       reward: 20,
       frequency: 40,
       icon: '#f40'
@@ -124,6 +124,39 @@ window.onload = function () {
     }
   }
 
+/*
+  Tiles:
+    * 0 - grass
+    * 1 - path
+    * 2 - spawn
+    * 3 - end
+  
+  Wave layout:
+  [] - optional
+  <> - value type
+  {
+    type - 'recurring', 'once-every' or 'once'
+    * recurring
+      waveLow <int> - wave in which this entry will start spawning enemies
+      [waveHigh] <int> - wave in which this entry will stop spawning enemies
+    * once-every
+      every <int> - every x wave this entry will spawn enemies
+    * once
+      wave <int> - wave in which this entry will spawn enemies
+
+    [oneAfterAnother] <bool> - If true, enemy types specified below will be spawned one-after-another
+
+    enemies: [{
+      type <string> - type of enemy
+      count <int> - base count to spawn
+      [incrementCount] <bool> - increments count by wave number
+      [countFactor] <int> - this number is multiplied by the wave and then added to count only if incrementCount is true
+      [incrementHealth] <bool> - increments health by wave number times healthFactor (default is 5)
+      [healthFactor] <int> - this number is multiplied by the wave and then added to health only if incrementHealth is true (default is 5)
+    }]
+  }
+*/
+
   let Maps = {
     width: 20, // Width of the map
     height: 20, // Height of the map
@@ -175,8 +208,8 @@ window.onload = function () {
           enemies: [{
             type: 'basic',
             count: 5,
-            inclCount: true,
-            inclHealth: true
+            incrementCount: true,
+            incrementHealth: true
           }]
         },
         {
@@ -187,14 +220,14 @@ window.onload = function () {
           enemies: [{
             type: 'basic',
             count: 5,
-            inclCount: true,
-            inclHealth: true
+            incrementCount: true,
+            incrementHealth: true
           },
           {
             type: 'speedy',
             count: 10,
-            inclCount: true,
-            inclHealth: true
+            incrementCount: true,
+            incrementHealth: true
           }]
         },
         {
@@ -204,14 +237,16 @@ window.onload = function () {
           enemies: [{
             type: 'basic',
             count: 5,
-            inclCount: true,
-            inclHealth: true
+            incrementCount: true,
+            incrementHealth: true,
+            healthFactor: 10
           },
           {
             type: 'speedy',
             count: 10,
-            inclCount: true,
-            inclHealth: true
+            incrementCount: true,
+            incrementHealth: true,
+            healthFactor: 10
           }]
         },
         {
@@ -221,8 +256,8 @@ window.onload = function () {
           enemies: [{
             type: 'tough',
             count: 5,
-            inclCount: true,
-            inclHealth: true
+            incrementCount: true,
+            incrementHealth: true
           }]
         },
         {
@@ -230,7 +265,7 @@ window.onload = function () {
           wave: 3,
           enemies: [{
             type: 'tough',
-            count: 2
+            count: 1
           }]
         }
       ]
@@ -632,16 +667,16 @@ window.onload = function () {
         let eHealthIncl = 0
         let multiply = wv.oneAfterAnother != null ? wv.oneAfterAnother : false
 
-        if (e.inclCount === true) {
-          eCount += Game.wave
+        if (e.incrementCount === true) {
+          eCount += Game.wave * (e.countFactor != null ? e.countFactor : 1)
         }
 
         if (e.baseHealth) {
           eHealthIncl = e.baseHealth
         }
 
-        if (e.inclHealth === true) {
-          eHealthIncl = Game.wave * 5
+        if (e.incrementHealth === true) {
+          eHealthIncl = Game.wave * (e.healthFactor != null ? e.healthFactor : 5)
           if (eHealthIncl > 500) {
             eHealthIncl = 500
           }
@@ -868,7 +903,7 @@ window.onload = function () {
       if (can === false) break
       let tower = Game.towers[j]
 
-      // tower placement restriction visualization
+      // Tower placement restriction around the tower
       for (let i = 0; i < 4; i++) {
         if (can === false) break
         let ax = tower.x
